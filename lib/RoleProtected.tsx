@@ -17,7 +17,7 @@ export function RoleProtected({ children, requiredRole }: RoleProtectedProps) {
 
     // Not authenticated
     if (!user) {
-      router.push('/auth/login');
+      router.push('/login');
       return;
     }
 

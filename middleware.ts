@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, serialize } from '@supabase/ssr';
 
 const protectedRoutes = ['/user', '/seller', '/affiliate', '/admin', '/auth/select-role'];
-const authRoutes = ['/auth/login', '/auth/register'];
+const authRoutes = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
 
       // Redirect protected routes to login
       if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-        return NextResponse.redirect(new URL('/auth/login', request.url));
+        return NextResponse.redirect(new URL('/login', request.url));
       }
 
       return response;
@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     // If there's an error checking session, redirect to login for protected routes
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
     return response;

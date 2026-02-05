@@ -14,7 +14,7 @@ const getRoleRoute = (role: string): string => {
       return '/affiliate';
     case 'user':
     default:
-      return '/';
+      return '/user';
   }
 };
 
@@ -37,6 +37,12 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
+      router.refresh();
+
+      if (!data.session || !data.user) {
+        setError('Login failed. Please try again.');
+        return;
+      }
 
       if (data.session && data.user) {
         // Ensure profile exists

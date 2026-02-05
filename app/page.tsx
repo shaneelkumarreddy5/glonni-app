@@ -21,10 +21,10 @@ export default function Home() {
           <Link href="/affiliate" className="text-gray-900 hover:text-gray-600">
             Affiliate Dashboard
           </Link>
-          <Link href="/auth/login" className="text-gray-900 hover:text-gray-600">
+          <Link href="/login" className="text-gray-900 hover:text-gray-600">
             Login
           </Link>
-          <Link href="/auth/register" className="text-gray-900 hover:text-gray-600">
+          <Link href="/register" className="text-gray-900 hover:text-gray-600">
             Register
           </Link>
         </nav>
