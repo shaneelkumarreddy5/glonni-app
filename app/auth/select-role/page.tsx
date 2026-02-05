@@ -26,17 +26,11 @@ export default function SelectRolePage() {
         return;
       }
 
-      // 1. Create or update profile
+      // 1. Update profile role
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert(
-          {
-            id: user.id,
-            role,
-            full_name: user.user_metadata?.full_name || null,
-          },
-          { onConflict: 'id' }
-        );
+        .update({ role })
+        .eq('id', user.id);
 
       if (profileError) throw profileError;
 
@@ -45,7 +39,6 @@ export default function SelectRolePage() {
         const { error: sellerError } = await supabase.from('sellers').upsert(
           {
             user_id: user.id,
-            store_name: 'My Store',
             status: 'pending',
           },
           { onConflict: 'user_id' }
@@ -63,7 +56,6 @@ export default function SelectRolePage() {
           {
             user_id: user.id,
             referral_code: referralCode,
-            commission_percent: 10.0,
           },
           { onConflict: 'user_id' }
         );
@@ -71,20 +63,6 @@ export default function SelectRolePage() {
         if (affiliateError && affiliateError.code !== '23505') {
           // Ignore duplicate key errors
           throw affiliateError;
-        }
-      } else if (role === 'user') {
-        // Users table for future extensibility
-        const { error: userError } = await supabase.from('users').upsert(
-          {
-            profile_id: user.id,
-          },
-          { onConflict: 'profile_id' }
-        );
-
-        if (userError && userError.code !== '23505') {
-          if (!userError.message.includes('already exists')) {
-            throw userError;
-          }
         }
       }
 
@@ -125,7 +103,7 @@ export default function SelectRolePage() {
             disabled={loading}
             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50"
           >
-            {selectedRole === 'user' && loading ? 'Setting up...' : 'Customer'}
+            {selectedRole === 'user' && loading ? 'Setting up...' : 'User'}
           </button>
 
           <button
