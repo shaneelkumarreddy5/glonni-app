@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createServerClient, serialize } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 const protectedRoutes = ['/user', '/seller', '/affiliate', '/admin', '/auth/select-role'];
 const authRoutes = ['/login', '/register'];
@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -34,12 +34,13 @@ export async function middleware(request: NextRequest) {
           });
           response.cookies.set(name, value, options);
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
+          void options;
           response.cookies.delete(name);
         },
       },
@@ -98,13 +99,22 @@ export async function middleware(request: NextRequest) {
 
       // Check if user has the correct role
       if (profile.role !== requiredRole) {
-        // Unauthorized role, redirect to role selection
-        return NextResponse.redirect(new URL('/auth/select-role', request.url));
+        const roleRoutes: Record<string, string> = {
+          user: '/user',
+          seller: '/seller',
+          affiliate: '/affiliate',
+          admin: '/admin',
+        };
+
+        // Unauthorized role, redirect to correct dashboard
+        return NextResponse.redirect(
+          new URL(roleRoutes[profile.role] || '/auth/select-role', request.url)
+        );
       }
     }
 
     return response;
-  } catch (error) {
+  } catch {
     // If there's an error checking session, redirect to login for protected routes
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
       return NextResponse.redirect(new URL('/login', request.url));

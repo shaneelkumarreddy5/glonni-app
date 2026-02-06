@@ -22,8 +22,20 @@ export function RoleProtected({ children, requiredRole }: RoleProtectedProps) {
     }
 
     // No role or wrong role
-    if (!role || role !== requiredRole) {
+    if (!role) {
       router.push('/auth/select-role');
+      return;
+    }
+
+    if (role !== requiredRole) {
+      const roleRoutes: Record<string, string> = {
+        user: '/user',
+        seller: '/seller',
+        affiliate: '/affiliate',
+        admin: '/admin',
+      };
+
+      router.push(roleRoutes[role] || '/auth/select-role');
     }
   }, [user, role, loading, requiredRole, router]);
 
