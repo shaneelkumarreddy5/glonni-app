@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { mockOrders } from './mockOrders';
 
@@ -27,11 +28,12 @@ export default function UserOrdersPage() {
               key={order.id}
               className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center"
             >
-              <img
+              <Image
                 src={order.image}
                 alt={order.name}
+                width={96}
+                height={96}
                 className="h-24 w-24 rounded-xl object-cover"
-                loading="lazy"
               />
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3">

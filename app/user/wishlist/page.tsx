@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 const wishlistItems = [
@@ -63,11 +64,12 @@ export default function UserWishlistPage() {
                 key={item.name}
                 className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
+                  width={400}
+                  height={160}
                   className="h-40 w-full rounded-xl object-cover"
-                  loading="lazy"
                 />
                 <div className="mt-4">
                   <p className="text-sm font-semibold text-gray-900">{item.name}</p>

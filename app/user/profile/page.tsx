@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 const addresses = [
@@ -26,11 +27,12 @@ export default function UserProfilePage() {
         <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80"
                 alt="Shaneel Kumar"
+                width={64}
+                height={64}
                 className="h-16 w-16 rounded-full object-cover"
-                loading="lazy"
               />
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">Shaneel Kumar</h1>

@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { mockOrders } from '../mockOrders';
 
@@ -59,11 +60,12 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
         <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <img
+              <Image
                 src={order.image}
                 alt={order.name}
+                width={112}
+                height={112}
                 className="h-28 w-28 rounded-xl object-cover"
-                loading="lazy"
               />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{order.name}</h2>
