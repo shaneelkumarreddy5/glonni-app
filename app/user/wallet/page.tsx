@@ -24,12 +24,17 @@ type StoredReturn = {
   refundAmount?: number;
 };
 
+const returnsEvent = 'glonni_returns_update';
+let cachedReturns: StoredReturn[] | null = null;
+
 const getReturnsSnapshot = (): StoredReturn[] => {
   if (typeof window === 'undefined') return [];
+  if (cachedReturns) return cachedReturns;
   try {
     const raw = window.localStorage.getItem('returns');
     const parsed = raw ? (JSON.parse(raw) as StoredReturn[]) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    cachedReturns = Array.isArray(parsed) ? parsed : [];
+    return cachedReturns;
   } catch {
     return [];
   }
@@ -39,9 +44,16 @@ const getReturnsServerSnapshot = () => [] as StoredReturn[];
 
 const subscribeToReturns = (callback: () => void) => {
   if (typeof window === 'undefined') return () => {};
-  const handler = () => callback();
+  const handler = () => {
+    cachedReturns = null;
+    callback();
+  };
   window.addEventListener('storage', handler);
-  return () => window.removeEventListener('storage', handler);
+  window.addEventListener(returnsEvent, handler);
+  return () => {
+    window.removeEventListener('storage', handler);
+    window.removeEventListener(returnsEvent, handler);
+  };
 };
 
 export default function UserWalletPage() {

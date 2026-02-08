@@ -66,8 +66,10 @@ export default function ReturnReviewPage({
       const raw = localStorage.getItem('returns');
       const parsed = raw ? (JSON.parse(raw) as StoredReturn[]) : [];
       localStorage.setItem('returns', JSON.stringify([payload, ...parsed]));
+      window.dispatchEvent(new Event('glonni_returns_update'));
     } catch {
       localStorage.setItem('returns', JSON.stringify([payload]));
+      window.dispatchEvent(new Event('glonni_returns_update'));
     }
 
     updateStoredOrderReturn(orderId, {

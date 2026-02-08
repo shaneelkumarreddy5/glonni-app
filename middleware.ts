@@ -8,7 +8,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for public routes
-  if (pathname === '/' || pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+  if (
+    pathname === '/' ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/seller')
+  ) {
     return NextResponse.next();
   }
 

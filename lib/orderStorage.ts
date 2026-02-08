@@ -44,6 +44,8 @@ const ordersEvent = 'glonni_orders_update';
 
 let cachedOrders: StoredOrder[] | null = null;
 let cachedLastOrderId: string | null = null;
+const emptyOrdersSnapshot: StoredOrder[] = [];
+const emptyLastOrderIdSnapshot: string | null = null;
 
 const getStorage = () => (typeof window === 'undefined' ? null : window.localStorage);
 
@@ -119,7 +121,7 @@ export const getOrdersSnapshot = () => {
   return cachedOrders;
 };
 
-export const getOrdersServerSnapshot = () => [] as StoredOrder[];
+export const getOrdersServerSnapshot = () => emptyOrdersSnapshot;
 
 export const getLastOrderIdSnapshot = () => {
   if (cachedLastOrderId !== null) return cachedLastOrderId;
@@ -127,7 +129,7 @@ export const getLastOrderIdSnapshot = () => {
   return cachedLastOrderId;
 };
 
-export const getLastOrderIdServerSnapshot = () => null as string | null;
+export const getLastOrderIdServerSnapshot = () => emptyLastOrderIdSnapshot;
 
 export const subscribeToOrders = (callback: () => void) => {
   if (typeof window === 'undefined') return () => {};
