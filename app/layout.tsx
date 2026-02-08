@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/AuthContext";
+import { CartProvider } from "@/lib/CartContext";
 import TopNav from "@/app/components/TopNav";
 import "./globals.css";
 
@@ -30,8 +31,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <TopNav />
-          <div className="pt-20">{children}</div>
+          <CartProvider>
+            <TopNav />
+            <div className="pt-20">{children}</div>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

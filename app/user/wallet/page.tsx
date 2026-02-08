@@ -1,18 +1,106 @@
-import Link from 'next/link';
+"use client";
 
-const transactions = [
-  { date: '12 Jan 2026', reference: 'ORD-101', amount: '+120', status: 'Credited' },
-  { date: '18 Jan 2026', reference: 'ORD-102', amount: '+80', status: 'Pending' },
-  { date: '20 Jan 2026', reference: 'Promo Bonus', amount: '+200', status: 'Credited' },
-];
+import Link from 'next/link';
+import { useMemo, useSyncExternalStore } from 'react';
+import {
+  getOrdersServerSnapshot,
+  getOrdersSnapshot,
+  subscribeToOrders,
+  type StoredOrder,
+} from '@/lib/orderStorage';
 
 const statusStyles: Record<string, string> = {
   Credited: 'bg-green-100 text-green-800',
   Pending: 'bg-amber-100 text-amber-800',
-  Reversed: 'bg-red-100 text-red-700',
+  Initiated: 'bg-sky-100 text-sky-700',
+  Processing: 'bg-amber-100 text-amber-700',
+  Completed: 'bg-green-100 text-green-800',
+};
+
+type StoredReturn = {
+  orderId: string;
+  status?: string;
+  timeline?: string[];
+  refundAmount?: number;
+};
+
+const getReturnsSnapshot = (): StoredReturn[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem('returns');
+    const parsed = raw ? (JSON.parse(raw) as StoredReturn[]) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getReturnsServerSnapshot = () => [] as StoredReturn[];
+
+const subscribeToReturns = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => callback();
+  window.addEventListener('storage', handler);
+  return () => window.removeEventListener('storage', handler);
 };
 
 export default function UserWalletPage() {
+  const orders = useSyncExternalStore(subscribeToOrders, getOrdersSnapshot, getOrdersServerSnapshot);
+  const returns = useSyncExternalStore(
+    subscribeToReturns,
+    getReturnsSnapshot,
+    getReturnsServerSnapshot
+  );
+
+  const { pendingCashback, creditedCashback, refundCredits, pendingRefunds, creditedRefunds, history } = useMemo(() => {
+    const pending = orders
+      .filter((order) => order.status !== 'Delivered')
+      .reduce((sum, order) => sum + order.cashbackTotal, 0);
+    const credited = orders
+      .filter((order) => order.status === 'Delivered')
+      .reduce((sum, order) => sum + order.cashbackTotal, 0);
+
+    const isRefunded = (entry: StoredReturn) => {
+      if (entry.status === 'Refunded') return true;
+      const timeline = entry.timeline ?? [];
+      return timeline.includes('Refunded') || timeline.includes('Refund Initiated');
+    };
+
+    const pendingRefundEntries = returns.filter((entry) => !isRefunded(entry));
+    const creditedRefundEntries = returns.filter((entry) => isRefunded(entry));
+    const refunds = creditedRefundEntries.reduce((sum, entry) => sum + (entry.refundAmount ?? 0), 0);
+
+    const orderEntries = orders.map((order) => ({
+      date: order.createdAt,
+      reference: order.id,
+      amount: `+${order.cashbackTotal}`,
+      status: order.status === 'Delivered' ? 'Credited' : 'Pending',
+    }));
+
+    const refundEntries = returns.map((entry) => {
+      const order = orders.find((item) => item.id === entry.orderId) || null;
+      return {
+        date: order?.createdAt || '08 Feb 2026',
+        reference: `Refund for Order ${entry.orderId}`,
+        amount: `+${entry.refundAmount ?? order?.total ?? 0}`,
+        status: isRefunded(entry) ? 'Credited' : 'Pending',
+      };
+    });
+
+    const promoEntries = [
+      { date: '20 Jan 2026', reference: 'Promo Bonus', amount: '+200', status: 'Credited' },
+    ];
+
+    return {
+      pendingCashback: pending,
+      creditedCashback: credited,
+      refundCredits: refunds,
+      pendingRefunds: pendingRefundEntries,
+      creditedRefunds: creditedRefundEntries,
+      history: [...orderEntries, ...refundEntries, ...promoEntries],
+    };
+  }, [orders, returns]);
+
   return (
     <main className="bg-gray-50">
       <div className="mx-auto w-full max-w-5xl px-6 py-8">
@@ -33,11 +121,15 @@ export default function UserWalletPage() {
             <div className="grid gap-3 text-sm text-slate-200">
               <div className="flex items-center justify-between gap-6">
                 <span>Total Cashback Earned</span>
-                <span className="font-semibold text-white">₹1,240</span>
+                <span className="font-semibold text-white">₹{creditedCashback}</span>
               </div>
               <div className="flex items-center justify-between gap-6">
                 <span>Pending Cashback</span>
-                <span className="font-semibold text-white">₹320</span>
+                <span className="font-semibold text-white">₹{pendingCashback}</span>
+              </div>
+              <div className="flex items-center justify-between gap-6">
+                <span>Refund Credits</span>
+                <span className="font-semibold text-white">₹{refundCredits}</span>
               </div>
             </div>
           </div>
@@ -63,7 +155,7 @@ export default function UserWalletPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
-                {transactions.map((txn) => (
+                {history.map((txn) => (
                   <tr key={`${txn.reference}-${txn.date}`}>
                     <td className="px-4 py-3">{txn.date}</td>
                     <td className="px-4 py-3 font-medium text-gray-900">{txn.reference}</td>
@@ -81,6 +173,44 @@ export default function UserWalletPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">Refunds</h2>
+          <div className="mt-4 grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Pending Refunds</p>
+              <div className="mt-3 space-y-3 text-sm text-gray-700">
+                {pendingRefunds.length === 0 && (
+                  <p className="text-sm text-gray-500">No pending refunds.</p>
+                )}
+                {pendingRefunds.map((entry) => (
+                  <div key={`pending-${entry.orderId}`} className="flex items-center justify-between">
+                    <span>Refund for Order {entry.orderId}</span>
+                    <span className="font-semibold">
+                      ₹{entry.refundAmount ?? 0}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">Credited Refunds</p>
+              <div className="mt-3 space-y-3 text-sm text-gray-700">
+                {creditedRefunds.length === 0 && (
+                  <p className="text-sm text-gray-500">No credited refunds yet.</p>
+                )}
+                {creditedRefunds.map((entry) => (
+                  <div key={`credited-${entry.orderId}`} className="flex items-center justify-between">
+                    <span>Refund for Order {entry.orderId}</span>
+                    <span className="font-semibold text-green-700">
+                      ₹{entry.refundAmount ?? 0}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

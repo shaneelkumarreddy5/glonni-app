@@ -1,17 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/lib/AuthContext';
-
-const roleLinks: Record<string, { label: string; href: string }> = {
-  user: { label: 'User', href: '/user' },
-  affiliate: { label: 'Affiliate', href: '/affiliate' },
-  seller: { label: 'Seller', href: '/seller' },
-  admin: { label: 'Admin', href: '/admin' },
-};
+import { useEffect, useState } from 'react';
+import { useCart } from '@/lib/CartContext';
 
 export default function TopNav() {
-  const { isAuthenticated, role, loading } = useAuth();
+  const { totalItems } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white px-6 py-4">
@@ -19,23 +18,23 @@ export default function TopNav() {
         <Link href="/" className="text-gray-900 hover:text-gray-600">
           Home
         </Link>
-
-        {!loading && !isAuthenticated && (
-          <>
-            <Link href="/login" className="text-gray-900 hover:text-gray-600">
-              Login
-            </Link>
-            <Link href="/register" className="text-gray-900 hover:text-gray-600">
-              Register
-            </Link>
-          </>
-        )}
-
-        {!loading && isAuthenticated && role && roleLinks[role] && (
-          <Link href={roleLinks[role].href} className="text-gray-900 hover:text-gray-600">
-            {roleLinks[role].label}
-          </Link>
-        )}
+        <Link href="/cart" className="text-gray-900 hover:text-gray-600">
+          My Cart
+        </Link>
+        <Link href="/orders" className="text-gray-900 hover:text-gray-600">
+          Orders
+        </Link>
+        <Link href="/settings" className="text-gray-900 hover:text-gray-600">
+          Settings
+        </Link>
+        <Link href="/cart" className="relative ml-auto flex items-center gap-2 text-gray-900">
+          <span className="text-sm font-medium">Cart</span>
+          {mounted && (
+            <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">
+              {totalItems}
+            </span>
+          )}
+        </Link>
       </div>
     </nav>
   );
