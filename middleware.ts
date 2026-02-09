@@ -13,7 +13,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/seller') ||
-    pathname.startsWith('/affiliate')
+    pathname.startsWith('/affiliate') ||
+    pathname.startsWith('/admin')
   ) {
     return NextResponse.next();
   }
@@ -65,6 +66,10 @@ export async function middleware(request: NextRequest) {
         return response;
       }
 
+      if (pathname.startsWith('/admin')) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+
       // Redirect protected routes to login
       if (protectedRoutes.some((route) => pathname.startsWith(route))) {
         return NextResponse.redirect(new URL('/login', request.url));
@@ -111,6 +116,10 @@ export async function middleware(request: NextRequest) {
           affiliate: '/affiliate',
           admin: '/admin',
         };
+
+        if (accessedRoute === '/admin') {
+          return NextResponse.redirect(new URL('/', request.url));
+        }
 
         // Unauthorized role, redirect to correct dashboard
         return NextResponse.redirect(
