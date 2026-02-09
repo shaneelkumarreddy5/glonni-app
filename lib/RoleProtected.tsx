@@ -73,12 +73,6 @@ export function RoleProtected({ children, requiredRole }: RoleProtectedProps) {
       return;
     }
 
-    // No role or wrong role
-    if (!accessProfile.role) {
-      router.push('/auth/select-role');
-      return;
-    }
-
     if (
       accessProfile.status === 'Suspended' &&
       (requiredRole === 'seller' || requiredRole === 'affiliate' || requiredRole === 'admin')
@@ -87,21 +81,32 @@ export function RoleProtected({ children, requiredRole }: RoleProtectedProps) {
       return;
     }
 
-
     if (accessProfile.role !== requiredRole) {
       const roleRoutes: Record<string, string> = {
-        user: '/user',
+        user: '/',
         seller: '/seller',
         affiliate: '/affiliate',
         admin: '/admin',
       };
 
       if (requiredRole === 'admin') {
+        router.push(roleRoutes[accessProfile.role] || '/');
+        return;
+      }
+      if (requiredRole === 'seller' || requiredRole === 'affiliate') {
         router.push('/');
         return;
       }
-
-      router.push(roleRoutes[accessProfile.role] || '/auth/select-role');
+      router.push('/');
+    }
+        router.push(roleRoutes[accessProfile.role] || '/');
+        return;
+      }
+      if (requiredRole === 'seller' || requiredRole === 'affiliate') {
+        router.push('/');
+        return;
+      }
+      router.push('/');
     }
   }, [user, accessProfile, loading, requiredRole, router, allowAdminPreview]);
 

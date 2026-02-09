@@ -14,7 +14,7 @@ const getRoleRoute = (role: string): string => {
       return '/affiliate';
     case 'user':
     default:
-      return '/user';
+      return '/';
   }
 };
 
@@ -37,17 +37,8 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
-      router.refresh();
-
-      if (!data.session || !data.user) {
-        setError('Login failed. Please try again.');
-        return;
-      }
 
       if (data.session && data.user) {
-        // Ensure profile exists
-        await fetch('/api/auth/create-profile', { method: 'POST' });
-
         // Fetch user's profile to get role
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -56,21 +47,21 @@ export default function LoginPage() {
           .single();
 
         if (profileError || !profile) {
-          // No profile found, redirect to role selection
-          router.push('/auth/select-role');
+          setError('Profile not found. Please contact support.');
           return;
         }
 
         // Redirect based on role
         const roleRoutes: Record<string, string> = {
-          user: '/user',
+          user: '/',
           seller: '/seller',
           affiliate: '/affiliate',
           admin: '/admin',
         };
-
         const route = roleRoutes[profile.role] || '/auth/select-role';
         router.push(route);
+      } else {
+        setError('Login failed. Please try again.');
       }
     } catch (err: any) {
       setError(err.message || 'Login failed');

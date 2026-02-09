@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
-const protectedRoutes = ['/user', '/seller', '/affiliate', '/admin', '/auth/select-role'];
+const protectedRoutes = ['/seller', '/affiliate', '/admin', '/auth/select-role'];
 const authRoutes = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
@@ -11,10 +11,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === '/' ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/seller') ||
-    pathname.startsWith('/affiliate') ||
-    pathname.startsWith('/admin')
+    pathname.startsWith('/api')
   ) {
     return NextResponse.next();
   }
@@ -85,7 +82,6 @@ export async function middleware(request: NextRequest) {
 
     // If user is trying to access protected dashboard routes, verify role
     const dashboardRoutes: Record<string, string> = {
-      '/user': 'user',
       '/seller': 'seller',
       '/affiliate': 'affiliate',
       '/admin': 'admin',
@@ -111,7 +107,7 @@ export async function middleware(request: NextRequest) {
       // Check if user has the correct role
       if (profile.role !== requiredRole) {
         const roleRoutes: Record<string, string> = {
-          user: '/user',
+          user: '/',
           seller: '/seller',
           affiliate: '/affiliate',
           admin: '/admin',

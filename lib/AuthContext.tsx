@@ -9,6 +9,7 @@ interface AuthContextType {
   role: string | null;
   loading: boolean;
   isAuthenticated: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,15 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
-
-  return (
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setRole(null);
+  };
     <AuthContext.Provider
       value={{
         user,
         role,
         loading,
         isAuthenticated: !!user,
+        logout,
       }}
     >
       {children}

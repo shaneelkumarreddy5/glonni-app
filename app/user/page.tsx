@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 const quickActions = [
   { title: 'My Orders', hint: 'Track deliveries', icon: 'MO', href: '/user/orders' },
@@ -102,6 +104,56 @@ export default function UserDashboardPage() {
   const ordersRef = useRef<HTMLDivElement | null>(null);
   const walletRef = useRef<HTMLDivElement | null>(null);
   const wishlistRef = useRef<HTMLDivElement | null>(null);
+  const { user, role } = useAuth();
+  const [sellerExists, setSellerExists] = useState(false);
+  const [affiliateExists, setAffiliateExists] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [approvedRequests, setApprovedRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      const [sellerRes, affiliateRes, requestsRes] = await Promise.all([
+        supabase.from('sellers').select('id').eq('profile_id', user.id).single(),
+        supabase.from('affiliates').select('id').eq('profile_id', user.id).single(),
+        supabase.from('role_requests').select('*').eq('profile_id', user.id),
+      ]);
+
+      setSellerExists(!!sellerRes.data);
+      setAffiliateExists(!!affiliateRes.data);
+
+      const pending = requestsRes.data?.filter((r: any) => r.status === 'pending') || [];
+      const approved = requestsRes.data?.filter((r: any) => r.status === 'approved') || [];
+      setPendingRequests(pending);
+      setApprovedRequests(approved);
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+  const applyForRole = async (requestedRole: 'seller' | 'affiliate') => {
+    setApplying(true);
+    const { error } = await supabase.from('role_requests').insert({
+      profile_id: user?.id,
+      requested_role: requestedRole,
+      status: 'pending',
+    });
+
+    if (error) {
+      alert('Error: ' + error.message);
+    } else {
+      // Refetch requests
+      const { data } = await supabase.from('role_requests').select('*').eq('profile_id', user?.id);
+      const pending = data?.filter((r: any) => r.status === 'pending') || [];
+      setPendingRequests(pending);
+    }
+    setApplying(false);
+  };
 
   const handleQuickAction = (target?: string) => {
     if (target === 'orders') {
@@ -124,6 +176,37 @@ export default function UserDashboardPage() {
             Manage your orders, cashback and wishlist
           </p>
         </section>
+
+        {role === 'user' && !loading && (
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900">Apply for Roles</h2>
+            <div className="mt-4 flex gap-4">
+              {!sellerExists && !pendingRequests.find((r) => r.requested_role === 'seller') && !approvedRequests.find((r) => r.requested_role === 'seller') && (
+                <button
+                  onClick={() => applyForRole('seller')}
+                  disabled={applying}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Apply as Seller
+                </button>
+              )}
+              {pendingRequests.find((r) => r.requested_role === 'seller') && <p className="text-gray-600">Application for Seller Pending</p>}
+              {approvedRequests.find((r) => r.requested_role === 'seller') && <p className="text-green-600">Seller Application Approved</p>}
+
+              {!affiliateExists && !pendingRequests.find((r) => r.requested_role === 'affiliate') && !approvedRequests.find((r) => r.requested_role === 'affiliate') && (
+                <button
+                  onClick={() => applyForRole('affiliate')}
+                  disabled={applying}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  Apply as Affiliate
+                </button>
+              )}
+              {pendingRequests.find((r) => r.requested_role === 'affiliate') && <p className="text-gray-600">Application for Affiliate Pending</p>}
+              {approvedRequests.find((r) => r.requested_role === 'affiliate') && <p className="text-green-600">Affiliate Application Approved</p>}
+            </div>
+          </section>
+        )}
 
         <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => {
